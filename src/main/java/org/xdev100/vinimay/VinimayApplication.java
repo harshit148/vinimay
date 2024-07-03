@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class VinimayApplication {
 
     public static void main(String[] args) {
+
         SpringApplication.run(VinimayApplication.class, args);
     }
 
