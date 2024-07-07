@@ -3,6 +3,7 @@ package org.xdev100.vinimay.service;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.Iterator;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,13 +45,15 @@ public class OrderService {
             return new FillOrderResult("rejected", maxFillQuantity, null);
         }
         if (side == OrderSide.BUY) {
-            for (Order order : orderBook.getAsks()) {
-                if (order.getPrice() <= price && quantity > 0 ) {
+            Iterator<Order> iterator = orderBook.getAsks().iterator();
+            while(iterator.hasNext() && quantity > 0 ) {
+                Order order = iterator.next();
+                if (order.getPrice() <= price) {
                     log.info("Filling ask");
                     double filledQuantity = Math.min(quantity, order.getQuantity());
                     log.info("Filled quantity: " + filledQuantity);
                     order.setQuantity(order.getQuantity()-filledQuantity);
-                    orderBook.updateBookQuantity(side, order.getPrice(), -filledQuantity);
+                    orderBook.updateBookQuantity(OrderSide.SELL, order.getPrice(), -filledQuantity);
                     fills.add(new Fill(order.getPrice(), filledQuantity, globalTradeId++));
                     executedQuantity += filledQuantity;
                     quantity -= filledQuantity;
@@ -58,28 +61,32 @@ public class OrderService {
                         orderBook.getBookWithQuantity().getAsks().remove(price);
                     }
                     if (order.getQuantity() == 0) {
-                        orderBook.getAsks().remove(order);
+                        iterator.remove();
+                        //orderBook.getAsks().remove(order);
                     }
                 }
             }
             if (quantity != 0) {
-                orderBook.getBids().add(new Order(price, quantity-executedQuantity, side, orderId));
-                orderBook.updateBookQuantity(side, price, quantity-executedQuantity);
+                orderBook.getBids().add(new Order(price, quantity, side, orderId));
+                orderBook.updateBookQuantity(side, price, quantity);
             }
         }
         else if (side == OrderSide.SELL)  {
-            for (Order order: orderBook.getBids()) {
-                if (order.getPrice() >= price && quantity > 0) {
+            Iterator <Order> iterator  = orderBook.getBids().iterator();
+            while(iterator.hasNext() && quantity > 0) {
+                Order order = iterator.next();
+                if (order.getPrice() >= price) {
                     log.info("Filling bid");
                     double filledQuantity = Math.min(order.getQuantity(), quantity);
                     log.info("Filled quantity: "+ filledQuantity);
                     order.setQuantity(order.getQuantity()-filledQuantity);
-                    orderBook.updateBookQuantity(side, price, -filledQuantity);
+                    orderBook.updateBookQuantity(OrderSide.BUY, order.getPrice(), -filledQuantity);
                     fills.add(new Fill(order.getPrice(), filledQuantity, globalTradeId++));
                     executedQuantity += filledQuantity;
                     quantity -=  filledQuantity;
                     if (order.getQuantity() == 0) {
-                        orderBook.getBids().remove(order);
+                        iterator.remove();
+                        //orderBook.getBids().remove(order);
                     }
                     if (orderBook.getBookWithQuantity().getBids().getOrDefault(price, 0.0) == 0) {
                         orderBook.getBookWithQuantity().getBids().remove(price);
@@ -87,8 +94,8 @@ public class OrderService {
                 }
             }
             if (quantity != 0 ){
-                orderBook.getAsks().add(new Order(price, quantity-executedQuantity, side, orderId));
-                orderBook.updateBookQuantity(side, price, quantity-executedQuantity);
+                orderBook.getAsks().add(new Order(price, quantity, side, orderId));
+                orderBook.updateBookQuantity(side, price, quantity);
             }
         }
         return new FillOrderResult("accepted", executedQuantity, fills);

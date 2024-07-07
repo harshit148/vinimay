@@ -34,6 +34,12 @@ public class OrderBook {
         else if (side == OrderSide.SELL) {
             bookWithQuantity.getAsks().put(price, bookWithQuantity.getAsks().getOrDefault(price, 0.0) + quantity);
         }
+        if ( bookWithQuantity.getBids().containsKey(price) && bookWithQuantity.getBids().get(price) == 0) {
+            bookWithQuantity.getBids().remove(price);
+        }
+        if (bookWithQuantity.getAsks().containsKey(price) && bookWithQuantity.getAsks().get(price) == 0 ){
+            bookWithQuantity.getAsks().remove(price);
+        }
     }
 
 }
