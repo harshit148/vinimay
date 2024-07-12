@@ -5,18 +5,14 @@ import lombok.Setter;
 
 import java.util.List;
 
+@Setter
+@Getter
 public class OrderResponse {
 
-    @Getter
-    @Setter
     private String orderId;
 
-    @Getter
-    @Setter
     private double executedQuantity;
 
-    @Getter
-    @Setter
     private List<Fill> fills;
 
     public OrderResponse(String orderId, double executedQuantity, List<Fill> fills) {

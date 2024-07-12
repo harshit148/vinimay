@@ -54,12 +54,12 @@ export function Depth({market} : {market: string}) {
                 }
                 return asksToUpdate;
             });
-            if (!bidsChange && !asksChange) {
+            /*if (!bidsChange && !asksChange) {
                 getDepth(market).then(d => {
                     setBids(d.bids.reverse());
                     setAsks(d.asks);
                 });
-            }
+            }*/
         }, `DEPTH-${market}`);
         SignalingManager.getInstance().sendMessage({"method": "SUBSCRIBE", "params": [`depth.200ms.${market}`]});
         getDepth(market).then(d => {
