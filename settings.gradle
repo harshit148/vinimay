@@ -1,1 +1,2 @@
 rootProject.name = 'Vinimay'
+include 'api', 'engine', 'websocket', 'db_processor', 'market_maker'
