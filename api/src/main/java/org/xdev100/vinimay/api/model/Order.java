@@ -1,6 +1,7 @@
 package org.xdev100.vinimay.api.model;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
