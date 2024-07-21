@@ -7,12 +7,14 @@
 
     @Getter
     @Setter
+
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
     @JsonSubTypes({
             @JsonSubTypes.Type(value = DepthResponse.class),
             @JsonSubTypes.Type(value = OpenOrders.class),
             @JsonSubTypes.Type(value = OrderPlaced.class),
-            @JsonSubTypes.Type(value = OrderCancelled.class)
+            @JsonSubTypes.Type(value = OrderCancelled.class),
+            @JsonSubTypes.Type(value = Fill.class),
     })
     public abstract class MessageFromOrderBook {
 

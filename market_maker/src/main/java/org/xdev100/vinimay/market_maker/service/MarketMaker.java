@@ -1,5 +1,6 @@
 package org.xdev100.vinimay.market_maker.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -18,7 +19,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 @Service
-
+@Slf4j
 public class MarketMaker {
     @Autowired
     private RestTemplate restTemplate; // Assuming you have configured RestTemplate in your AppConfig
@@ -43,9 +44,10 @@ public class MarketMaker {
     @Scheduled(fixedDelay = 10000) // Run every 10 seconds, adjust as needed
     public void executeMarketMakerStrategy() {
         try {
+            log.info("Market making");
             double price = 1000 + random.nextDouble() * 10;
             ResponseEntity<Order[]> openOrdersResponse = restTemplate.exchange(
-                    baseUrl + "/api/v1/order/open?userId={userId}&market={market}",
+                    baseUrl + "/api/v2/order/open?userId={userId}&market={market}",
                     HttpMethod.GET, null, Order[].class, userId, market);
 
             Order[] openOrders = openOrdersResponse.getBody();
@@ -85,7 +87,7 @@ public class MarketMaker {
         int cancelled = 0;
         for (Order order : orders) {
             if (order.getSide() == OrderSide.BUY  && (order.getPrice() > price || random.nextDouble() < 0.1)) {
-                restTemplate.exchange(baseUrl + "/api/v1/order",
+                restTemplate.exchange(baseUrl + "/api/v2/order",
                         HttpMethod.DELETE, new HttpEntity<>(order), Void.class);
                 cancelled++;
             }
@@ -97,7 +99,7 @@ public class MarketMaker {
         int cancelled = 0;
         for (Order order : orders) {
             if (order.getSide() == OrderSide.SELL && (order.getPrice() < price || random.nextDouble() < 0.5)) {
-                restTemplate.exchange(baseUrl + "/api/v1/order",
+                restTemplate.exchange(baseUrl + "/api/v2/order",
                         HttpMethod.DELETE, new HttpEntity<>(order), Void.class);
                 cancelled++;
             }
@@ -116,7 +118,7 @@ public class MarketMaker {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
 
-        restTemplate.exchange(baseUrl + "/api/v1/order",
+        restTemplate.exchange(baseUrl + "/api/v2/order",
                 HttpMethod.POST, new HttpEntity<>(order, headers), Void.class);
     }
 }

@@ -1,5 +1,6 @@
 package org.xdev100.vinimay.api.model;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -7,6 +8,8 @@ import lombok.Setter;
 
 @Setter
 @Getter
+@NoArgsConstructor
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
 public class Order {
 
     private double price;

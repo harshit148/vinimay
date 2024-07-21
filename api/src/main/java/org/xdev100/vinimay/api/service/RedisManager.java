@@ -1,6 +1,7 @@
 package org.xdev100.vinimay.api.service;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.xdev100.vinimay.api.model.MessageToEngine;
 import org.xdev100.vinimay.api.model.MessageFromOrderBook;
 import org.xdev100.vinimay.api.model.RedisMessage;
@@ -20,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class RedisManager {
 
     private final RedisTemplate<String, Object> redisTemplate;
@@ -34,6 +36,7 @@ public class RedisManager {
     }
 
     public CompletableFuture<MessageFromOrderBook> sendAndAwait(MessageToEngine message) throws JsonProcessingException {
+        log.info("Reached sendAndAwait");
         CompletableFuture<MessageFromOrderBook> future = new CompletableFuture<>();
         String clientId = UUID.randomUUID().toString();
         pendingMessages.put(clientId, future);
@@ -41,6 +44,7 @@ public class RedisManager {
             @Override
             public void onMessage(Message message1, byte[] pattern) {
                 String msg = new String(message1.getBody());
+                System.out.println("Response from engine: "+ msg);
                 try {
                     MessageFromOrderBook response = objectMapper.readValue(msg, MessageFromOrderBook.class);
                     pendingMessages.get(clientId).complete(response);
@@ -50,6 +54,7 @@ public class RedisManager {
                 }
             }
         }, new ChannelTopic(clientId));
+        log.info("Post message listener container");
         redisTemplate.opsForList().leftPush("messages", objectMapper.writeValueAsString(new RedisMessage(clientId, message)));
         return future;
     }

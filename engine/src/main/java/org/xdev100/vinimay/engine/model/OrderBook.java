@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.xdev100.vinimay.api.model.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -16,13 +17,16 @@ public class OrderBook {
     private long lastTradeId;
     private double currentPrice;
 
-    public OrderBook(String baseAsset, List<Order> bids, List<Order> asks, Long lastTradeId, Double currentPrice) {
+    public OrderBook(String baseAsset, List<Order> bids, List<Order> asks, Long lastTradeId, Double currentPrice, String quoteAsset) {
         this.bids = bids;
         this.asks = asks;
         this.baseAsset = baseAsset;
         this.lastTradeId = (lastTradeId != null) ? lastTradeId: 0L;
         this.currentPrice = (currentPrice != null) ? currentPrice: 0.0;
+        this.quoteAsset = (quoteAsset != null) ? quoteAsset: "INR";
     }
+
+
 
     public String ticker() {
         return baseAsset + "_" + quoteAsset;
@@ -35,7 +39,7 @@ public class OrderBook {
         snapShot.put("lastTradeId", lastTradeId);
         snapShot.put("currentPrice", currentPrice);
         return snapShot;*/
-        return new OrderBook(baseAsset, bids, asks, lastTradeId, currentPrice);
+        return new OrderBook(baseAsset, bids, asks, lastTradeId, currentPrice, quoteAsset);
     }
     public FillOrderResult addOrder(Order order) {
         if (order.getSide() == OrderSide.BUY) {
@@ -111,8 +115,8 @@ public class OrderBook {
     }
     public OpenOrders getOpenOrders(String userId) {
         OpenOrders openOrders =  new OpenOrders();
-        List <Order> asks = this.asks.stream().filter(ask -> ask.getUserId().equals(userId)).toList();
-        List <Order> bids = this.bids.stream().filter(bid -> bid.getUserId().equals(userId)).toList();
+        List <Order> asks = this.asks.stream().filter(ask -> ask.getUserId().equals(userId)).collect(Collectors.toCollection(ArrayList::new));
+        List <Order> bids = this.bids.stream().filter(bid -> bid.getUserId().equals(userId)).collect(Collectors.toCollection(ArrayList::new));
         openOrders.setOrders(asks);
         openOrders.getOrders().addAll(bids);
         return openOrders;

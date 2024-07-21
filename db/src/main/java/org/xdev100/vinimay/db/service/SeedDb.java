@@ -72,9 +72,9 @@ public class SeedDb {
         """;
 
         jdbcTemplate.execute(createTableSql);
-        jdbcTemplate.execute(createView1mSql);
-        jdbcTemplate.execute(createView1hSql);
-        jdbcTemplate.execute(createView1wSql);
+//        jdbcTemplate.execute(createView1mSql);
+//        jdbcTemplate.execute(createView1hSql);
+//        jdbcTemplate.execute(createView1wSql);
         log.info("Database initialized successfully");
         }
 }

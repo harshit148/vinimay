@@ -2,6 +2,9 @@ package org.xdev100.vinimay.engine.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.deser.std.MapEntryDeserializer;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,36 +39,55 @@ public class Engine {
     Supplier <Exception> orderBookException = () -> new Exception("No orderbook found");
     Supplier <Exception> orderException = () -> new Exception("No order found");
     private final String BASE_CURRENCY = "INR";
-    @Autowired
     private ResourceLoader resourceLoader;
 
     @Autowired
     private RedisPubSub redisPubSub;
 
-    @Value("${WITH_SNAPSHOT:false}")
     private boolean withSnapShot;
 
-    public Engine() {
+    @Autowired
+    public Engine(@Value("${WITH_SNAPSHOT}") boolean withSnapShot, ResourceLoader resourceLoader) {
+        System.out.println("Engine constructor: "+ withSnapShot);
         if(withSnapShot) {
             try {
                 Resource resource = resourceLoader.getResource("classpath:static/snapshot.json");
                 Path snapshotPath = resource.getFile().toPath();
                 String snapshot = Files.readString(snapshotPath);
-                SnapshotData snapshotData = new Gson().fromJson(snapshot, SnapshotData.class);
+                Gson gson = new GsonBuilder()
+                        .registerTypeAdapter(new TypeToken<List<Map.Entry<String, UserBalance>>>() {}.getType(), new SnapshotDeserializer()).create();
+                SnapshotData snapshotData = gson.fromJson(snapshot, SnapshotData.class);
                 orderBooks = snapshotData.getOrderbooks().stream()
                         .map(orderbook -> new OrderBook(orderbook.getBaseAsset(),
                                                         orderbook.getBids(),
                                                         orderbook.getAsks(),
                                                         orderbook.getLastTradeId(),
-                                                        orderbook.getCurrentPrice())).collect(Collectors.toList());
+                                                        orderbook.getCurrentPrice(),
+                                                        orderbook.getQuoteAsset())).collect(Collectors.toList());
+                System.out.println("LOADED SNAPSHOTS");
+                orderBooks.forEach((book)->System.out.println(book.ticker()));
                 balances = new HashMap<>();
-                snapshotData.getBalances().forEach(balanceEntry-> balances.put(balanceEntry.getKey(), balanceEntry.getValue()));
+
+                snapshotData.getBalances().forEach(entry -> {
+                    String userId = entry.getKey();
+                    UserBalance userBalance = entry.getValue();
+                    System.out.println("User ID: " + userId);
+                    userBalance.getBalance().forEach((currency, balanceInfo) -> {
+                        System.out.println("Currency: " + currency + " Available: " + balanceInfo.getAvailableFunds() + " Locked: " + balanceInfo.getLockedFunds());
+                    });
+                    balances.put(userId, userBalance); // Store in balances map if needed
+                });
+
+            // Optionally, print the stored balances
+                balances.forEach((k, v) -> {
+                    System.out.println("Key: " + k + " value: " + v.getBalance());
+                });
             }catch(IOException e) {
                 log.error("Error loading snapshot file");
             }
         }
         else {
-            orderBooks = Collections.singletonList(new OrderBook("TATA", Collections.emptyList(), Collections.emptyList(), 0L, 0.0));
+            orderBooks = Collections.singletonList(new OrderBook("TATA", Collections.emptyList(), Collections.emptyList(), 0L, 0.0, "INR"));
             setBalances();
         }
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -138,8 +160,10 @@ public class Engine {
                 }
                 break;
             case "GET_OPEN_ORDERS":
-                String requestedMarket = message.getGetOpenOrder().getMarket();
+                String requestedMarket = message.getGetOpenOrder().getMarket().trim();
+                log.info("Requested market: " + requestedMarket);
                 try {
+                    orderBooks.forEach((book)->System.out.println(book.ticker()));
                     OrderBook openOrderBook = orderBooks.stream()
                                                         .filter(book -> book.ticker().equals(requestedMarket))
                                                         .findAny()
@@ -232,7 +256,10 @@ public class Engine {
         updateDbOrders(order, orderResult.getExecutedQty(), orderResult.getFills(), market);
         publishWsDepthUpdates(orderResult.getFills(), price, side, market);
         publishWsTrades(orderResult.getFills(), userId, market);
-        return MessageFromOrderBookFactory.createOrderPlaced(orderResult.getOrderId(), orderResult.getExecutedQty(), orderResult.getFills());
+        System.out.println("OrderId: "+ orderId);
+        System.out.println("ExecutedQty: "+ orderResult.getExecutedQty());
+        orderResult.getFills().forEach(System.out::println);
+        return MessageFromOrderBookFactory.createOrderPlaced(orderId, orderResult.getExecutedQty(), orderResult.getFills());
 
     }
     public void createDbTrades(List<Fill> fills, String market, String userId) {
@@ -280,11 +307,11 @@ public class Engine {
             redisPubSub.getInstance().publishMessage("depth@" + market, depthMessage);
         }
         if (side == OrderSide.SELL) {
-            List <Pair<String, String>> updateAsks = new ArrayList<>(depth.getBids().stream()
+            List <Pair<String, String>> updateAsks = new ArrayList<>(depth.getAsks().stream()
                     .filter(ask -> Double.parseDouble(ask[0]) == price)
                     .map(ask -> Pair.of(ask[0], ask[1]))
                     .toList());
-            List <Pair<String, String>> updateBids = new ArrayList<>(depth.getAsks().stream()
+            List <Pair<String, String>> updateBids = new ArrayList<>(depth.getBids().stream()
                     .filter(bid -> fills.stream().map(Fill::getPrice).map(Object::toString).toList().contains(bid[0]))
                     .map(bid -> Pair.of(bid[0], bid[1]))
                     .toList());

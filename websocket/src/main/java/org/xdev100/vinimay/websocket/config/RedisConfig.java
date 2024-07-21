@@ -22,13 +22,10 @@ public class RedisConfig {
         return redisTemplate;
     }
 
-   /* @Bean
-    public RedisMessageListenerContainer redisContainer(RedisConnectionFactory redisConnectionFactory, SubscriptionManager subscriptionManager) {
+    @Bean
+    public RedisMessageListenerContainer redisContainer(RedisConnectionFactory redisConnectionFactory) {
         RedisMessageListenerContainer redisContainer = new RedisMessageListenerContainer();
         redisContainer.setConnectionFactory(redisConnectionFactory);
-        redisContainer.addMessageListener((MessageListener) subscriptionManager, new PatternTopic("trades@*"));
-        redisContainer.addMessageListener((MessageListener) subscriptionManager, new PatternTopic("depth@*"));
-        redisContainer.addMessageListener((MessageListener) subscriptionManager, new PatternTopic("ticker@*"));
         return redisContainer;
-    }*/
+    }
 }

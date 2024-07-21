@@ -11,7 +11,9 @@ public class Fill {
     private long tradeId;
     private String otherUserId;
     private String marketOrderId;
+    public Fill() {
 
+    }
 
     public Fill(double price, double qty, long tradeId) {
         this.price = price;

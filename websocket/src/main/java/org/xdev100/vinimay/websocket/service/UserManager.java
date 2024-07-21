@@ -2,6 +2,7 @@ package org.xdev100.vinimay.websocket.service;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.WebSocketSession;
 import org.xdev100.vinimay.websocket.model.User;
@@ -10,11 +11,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@Getter
 @Service
+@Slf4j
 public class UserManager {
     @Getter
     private static UserManager instance;
     private Map<String, User> users;
+
+    public UserManager() {
+        this.users = new HashMap<>();
+    }
 
     @PostConstruct
     public void init() {
@@ -22,13 +29,12 @@ public class UserManager {
     }
 
     public User addUser(WebSocketSession session) {
-        String id = UUID.randomUUID().toString();
+        String id = session.getId(); //UUID.randomUUID().toString();
         User user = new User(id, session);
-        if (users.isEmpty()) {
-            users = new HashMap<>();
-        }
         users.put(id, user);
-        registerOnClose(session, id);
+        session.getAttributes().put("userId", id); // Store userId in session attributes
+        log.info("Added user: "+ id);
+        //registerOnClose(session, id);
         return user;
     }
     private void registerOnClose(WebSocketSession ws, String userId) {
