@@ -20,7 +20,7 @@ public class TickerImportController {
 
     @PostMapping
     public ResponseEntity<String> importTicker() {
-        tickerImportService.importTickersFromJson("/home/harshit/IdeaProjects/Vinimay/src/main/resources/tickers.json");
+        tickerImportService.importTickersFromJson("/home/harshit/IdeaProjects/Vinimay/api/src/main/resources/tickers.json");
         return ResponseEntity.ok("Tickers imported from json file");
     }
 }

@@ -54,20 +54,22 @@ export function Depth({market} : {market: string}) {
                 }
                 return asksToUpdate;
             });
-            /*if (!bidsChange && !asksChange) {
+            if (!bidsChange && !asksChange) {
                 getDepth(market).then(d => {
                     setBids(d.bids.reverse());
                     setAsks(d.asks);
                 });
-            }*/
+            }
         }, `DEPTH-${market}`);
-        SignalingManager.getInstance().sendMessage({"method": "SUBSCRIBE", "params": [`depth.200ms.${market}`]});
+        //SignalingManager.getInstance().sendMessage({"method": "SUBSCRIBE", "params": [`depth.200ms.${market}`]});
+        SignalingManager.getInstance().sendMessage({"method":"SUBSCRIBE","params":[`depth@${market}`]});
         getDepth(market).then(d => {
            setBids(d.bids.reverse());
            setAsks(d.asks);
        });
         return () => {
-            SignalingManager.getInstance().sendMessage({"method": "UNSUBSCRIBE", "params": [`depth.200ms.${market}`]});
+            //SignalingManager.getInstance().sendMessage({"method": "UNSUBSCRIBE", "params": [`depth.200ms.${market}`]});
+            SignalingManager.getInstance().sendMessage({"method": "UNSUBSCRIBE", "params": [`depth@${market}`]});
             SignalingManager.getInstance().deRegisterCallback("depth", `DEPTH-${market}`);
         }
 

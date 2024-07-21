@@ -1,5 +1,5 @@
-import axios from "axios";
-import { Depth, KLine, Ticker, Trade } from "./types";
+import axios, { AxiosRequestConfig } from "axios";
+import { Depth, KLine, Ticker, Trade, MarketRequest } from "./types";
 
 const BASE_URL = "https://exchange-proxy.100xdevs.com/api/v1";
 const SPRING_BACKEND_BASE_URL = "http://localhost:8080/api/v1";
@@ -22,7 +22,12 @@ export async function getTickers():Promise<Ticker[]> {
 }
 
 export async function getDepth(market: string):Promise<Depth> {
-    const response = await axios.get(`${BASE_URL}/depth?symbol=${market}`);
+    const config: AxiosRequestConfig = {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+    const response = await axios.post(`${SPRING_BACKEND_BASE_URL}/depth`, { market : market } as MarketRequest, config);
     return response.data;
 }
 
